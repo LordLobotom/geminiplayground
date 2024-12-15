@@ -162,21 +162,28 @@ class ConfigGUI:
         if not self.running:
             return
 
-        self.running = False
-        self.gemini_connected = False
-        if self.gemini_client:
-            self.cleanup_event.set()
-            if self.gemini_thread:
-                self.gemini_thread.join()
-            self.gemini_client = None
-            self.cleanup_event.clear()
+        try:
+            self.running = False
+            self.gemini_connected = False
+            
+            # Stop the equalizer first
+            if hasattr(self, 'equalizer'):
+                self.equalizer.stop_animation()
 
-        self.equalizer.stop_animation()
+            # Clean up Gemini client
+            if self.gemini_client:
+                self.cleanup_event.set()
+                if self.gemini_thread and self.gemini_thread.is_alive():
+                    self.gemini_thread.join(timeout=2.0)  # Wait up to 2 seconds
+                self.gemini_client = None
+                self.cleanup_event.clear()
 
-        # Re-enable configuration after stopping
-        self.set_config_state("normal")
-        self.start_button.config(state=tk.NORMAL)
-        self.stop_button.config(state=tk.DISABLED)
+            # Re-enable configuration after stopping
+            self.set_config_state("normal")
+            self.start_button.config(state=tk.NORMAL)
+            self.stop_button.config(state=tk.DISABLED)
+        except Exception as e:
+            print(f"Error during cleanup: {e}")
 
     def _run_gemini_async(self):
         try:

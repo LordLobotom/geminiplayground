@@ -61,6 +61,12 @@ class GeminiConnection:
                 await self.ws.close()
             except Exception as e:
                 print(f"Error closing websocket: {e}")
+            finally:
+                self.ws = None
+        
+        # Clean up VAD resources
+        if hasattr(self, 'vad'):
+            self.vad = None
 
     async def start(self):
         """Create a WebSocket connection and run the capture, streaming, and playback tasks concurrently."""
